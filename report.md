@@ -152,12 +152,116 @@ std::vector<Enemy*> ShootingApp::enemies;
 - 宣言(EnemyB.h)
 
 ```cpp
+#pragma once
+#include "Enemy.h"
+#include "ShootingApp.h"
 
+class EnemyB : public Enemy
+{
+private:
+	double phase;
+public:
+	EnemyB();
+	~EnemyB();
+
+	void init();
+	void update();
+	void draw();
+};
 ```
 
 - 定義(EnemyB.cpp)
 ```cpp
+#define _USE_MATH_DEFINES	// Visual C++でM_PIを使えるように
+#include <cmath>
+#include "EnemyB.h"
 
+EnemyB::EnemyB() : Enemy()
+{
+}
+
+
+EnemyB::~EnemyB()
+{
+}
+
+void EnemyB::init()
+{
+	FlyingObject::init();
+
+	phase = App::rand() * M_PI;	// M_PIはπ
+
+	x = 100 + 500 * App::rand();
+	y = 100 + 200 * App::rand();
+
+	vx = 100 + 200 * App::rand();
+	vy = 100 + 200 * App::rand();
+
+	ax = 0.5;
+	ay = 0.2;
+
+	radius = 30;
+	score = 100;
+}
+
+void EnemyB::update()
+{
+	if (status & COLLISION) {
+		if (etimer.get() > 0.5) {
+			cleanup();
+		}
+		return;
+	}
+	double dt = elapsed.get();
+	double mt = mtimer.get();
+	double dx, dy;
+
+	// updateの間隔が長すぎるときは、強制的にdtを設定
+	if (dt > 1.0 / 30) {
+		dt = 1.0 / 30;
+	}
+
+	if (vx == 200) {
+		ax = -0.5;
+	}
+	else if (vx == 100) {
+		ax = 0.5;
+	}
+
+	if (vy == 100) {
+		ay = -0.2;
+	}
+	else if (vy == 100) {
+		ay = 0.2;
+	}
+	
+	vx += ax;
+	vy += ay;
+
+	dx = vx * sin(2 * mt + phase) * dt;
+	dy = vy * cos(5 * mt + phase) * dt;
+
+	x += dx;
+	y += dy;
+
+	elapsed.reset();
+}
+
+void EnemyB::draw()// 後で自分の好きな形に変更する
+{
+	if (status & COLLISION) {
+		drawExplosion();
+		return;
+	}
+	LPCWSTR c = TEXT("△");
+	TextOut(App::hDC, (int)x + 10, (int)y - 27, c, lstrlen(c));
+	c = TEXT("( ﾟдﾟ)");
+	TextOut(App::hDC, (int)x - 6, (int)y - 10, c, lstrlen(c));
+	c = TEXT("( 　)");
+	TextOut(App::hDC, (int)x - 3, (int)y + 4, c, lstrlen(c));
+	c = TEXT(")ノ");
+	TextOut(App::hDC, (int)x + 7, (int)y + 18, c, lstrlen(c));
+}
 ```
 
 - 説明
@@ -170,12 +274,37 @@ std::vector<Enemy*> ShootingApp::enemies;
 - 宣言(Score.h)
 
 ```cpp
-
+#pragma once
+#include "App.h"
+class Score
+{
+private:
+	int score;
+public:
+	void init();
+	void addScore(int score);
+	void draw(int x,int y);
+};
 ```
 
 - 定義(Score.cpp)
 ```cpp
+#include "Score.h"
+#include <string>
 
+void Score::init() {
+	score = 0;
+}
+
+void Score::addScore(int score) {
+	Score::score += score;
+}
+
+void Score::draw(int x,int y) { 
+	TCHAR ScoreBord[64];
+	wsprintf(ScoreBord,TEXT("%05d"), score);
+	TextOut(App::hDC, x, y, ScoreBord, lstrlen(ScoreBord));
+}
 ```
 
 - 説明
